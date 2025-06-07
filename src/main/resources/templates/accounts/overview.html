@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Accounts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    integrity="sha256-9kPW/n5nn53j4WMRYAxe9c1rCY96Oogo/MKSVdKzPmI="
+    crossorigin="anonymous"
+    />
+    
+</head>
+<body>
+    <h1 layout:fragment="header">Financial Overview</h1>
+
+    <div layout:fragment="content">
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(totalBalance, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>Total Balance</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(monthlyIncome, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>This Month's Income</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(monthlyExpenses, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>This Month's Expenses</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(pendingAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>Pending Collections</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <button class="btn btn-primary" data-toggle="modal" data-target="#recordTransactionModal">
+                    <i class="fas fa-plus"></i> Record Transaction
+                </button>
+                <div class="btn-group ml-2">
+                    <button type="button" class="btn btn-success" onclick="exportTransactions('excel')">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="exportTransactions('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export to PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Filter -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Date Range</span>
+                    </div>
+                    <input type="date" id="startDate" class="form-control" th:value="${startDate}">
+                    <input type="date" id="endDate" class="form-control" th:value="${endDate}">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="applyDateFilter()">
+                            Apply
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="resetDateFilter()">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select id="typeFilter" class="form-control" onchange="applyFilters()">
+                    <option value="">All Types</option>
+                    <option value="CREDIT">Credits Only</option>
+                    <option value="DEBIT">Debits Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search transactions...">
+            </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Transaction History</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Member</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Note</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="transaction : ${transactions}">
+                            <td th:text="${#temporals.format(transaction.date, 'dd-MM-yyyy HH:mm')}">01-01-2024</td>
+                            <td>
+                                <span th:text="${transaction.member.name}">John Doe</span><br>
+                                <small class="text-muted" th:text="${transaction.member.phone}">123-456-7890</small>
+                            </td>
+                            <td>
+                                <span th:class="${transaction.type == T(com.familyfund.model.Transaction.TransactionType).CREDIT ? 'badge badge-success' : 'badge badge-danger'}"
+                                      th:text="${transaction.type}">CREDIT</span>
+                            </td>
+                            <td>
+                                $<span th:text="${#numbers.formatDecimal(transaction.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </td>
+                            <td th:text="${transaction.note}">Monthly subscription</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" th:onclick="'viewTransactionDetails(\'' + ${transaction.id} + '\')'">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(transactions)}">
+                            <td colspan="6" class="text-center">No transactions found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Record Transaction Modal -->
+        <div class="modal fade" id="recordTransactionModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Record Transaction</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="transactionForm">
+                            <div class="form-group">
+                                <label for="transactionType">Type</label>
+                                <select class="form-control" id="transactionType" required>
+                                    <option value="CREDIT">Credit (Income)</option>
+                                    <option value="DEBIT">Debit (Expense)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="memberId">Member</label>
+                                <select class="form-control" id="memberId">
+                                    <option value="">Select Member (Optional)</option>
+                                    <option th:each="member : ${members}"
+                                            th:value="${member.id}"
+                                            th:text="${member.name + ' (' + member.phone + ')'}">
+                                        John Doe (123-456-7890)
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="amount">Amount</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+                                    <input type="number" class="form-control" id="amount" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="note">Note</label>
+                                <textarea class="form-control" id="note" rows="3" required></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="submitTransaction()">Save Transaction</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional scripts -->
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // Apply date filter
+            function applyDateFilter() {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                if (!startDate || !endDate) {
+                    alert('Please select both start and end dates');
+                    return;
+                }
+                window.location.href = `/accounts?startDate=${startDate}&endDate=${endDate}`;
+            }
+
+            // Reset date filter
+            function resetDateFilter() {
+                window.location.href = '/accounts';
+            }
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('keyup', function() {
+                let searchText = this.value.toLowerCase();
+                let tableRows = document.querySelectorAll('tbody tr');
+                let typeFilter = document.getElementById('typeFilter').value;
+                
+                tableRows.forEach(row => {
+                    let text = row.textContent.toLowerCase();
+                    let type = row.querySelector('td:nth-child(3)').textContent;
+                    let showByType = !typeFilter || type === typeFilter;
+                    row.style.display = (text.includes(searchText) && showByType) ? '' : 'none';
+                });
+            });
+
+            // Apply type filter
+            function applyFilters() {
+                document.getElementById('searchInput').dispatchEvent(new Event('keyup'));
+            }
+
+            // Submit transaction
+            function submitTransaction() {
+                const type = document.getElementById('transactionType').value;
+                const memberId = document.getElementById('memberId').value;
+                const amount = document.getElementById('amount').value;
+                const note = document.getElementById('note').value;
+
+                if (!type || !amount || !note) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                fetch('/accounts/transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: type,
+                        memberId: memberId || null,
+                        amount: amount,
+                        note: note
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Error recording transaction');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error recording transaction');
+                });
+            }
+
+            // View transaction details
+            function viewTransactionDetails(transactionId) {
+                window.location.href = `/accounts/transactions/${transactionId}`;
+            }
+
+            // Export transactions
+            function exportTransactions(format) {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const type = document.getElementById('typeFilter').value;
+                
+                let url = `/accounts/export?format=${format}`;
+                if (startDate && endDate) {
+                    url += `&startDate=${startDate}&endDate=${endDate}`;
+                }
+                if (type) {
+                    url += `&type=${type}`;
+                }
+                
+                window.location.href = url;
+            }
+        </script>
+    </th:block>
+</body>
+</html> 

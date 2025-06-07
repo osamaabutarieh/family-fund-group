@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title th:text="${member.id == null ? 'Add Member' : 'Edit Member'}">Add/Edit Member</title>
+</head>
+<body>
+    <h1 layout:fragment="header" th:text="${member.id == null ? 'Add Member' : 'Edit Member'}">Add/Edit Member</h1>
+
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <form th:action="@{${member.id == null ? '/members/add' : '/members/' + member.id + '/edit'}}"
+                              th:object="${member}" method="post">
+                            
+                            <!-- Hidden ID field for editing -->
+                            <input type="hidden" th:field="*{id}" />
+                            
+                            <!-- Name -->
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" id="name" th:field="*{name}"
+                                       th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
+                                     th:errors="*{name}">Name error</div>
+                            </div>
+                            
+                            <!-- Phone -->
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" class="form-control" id="phone" th:field="*{phone}"
+                                       th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid'" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}"
+                                     th:errors="*{phone}">Phone error</div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" class="form-control" id="email" th:field="*{email}"
+                                       th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                                     th:errors="*{email}">Email error</div>
+                            </div>
+                            
+                            <!-- Status (only for editing) -->
+                            <div class="form-group" th:if="${member.id != null}">
+                                <label for="status">Status</label>
+                                <select class="form-control" id="status" th:field="*{status}">
+                                    <option th:each="status : ${T(com.familyfund.model.Member.MemberStatus).values()}"
+                                            th:value="${status}" th:text="${status}">ACTIVE</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Submit and Cancel buttons -->
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                                <a href="/members" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional scripts -->
+    <th:block layout:fragment="scripts">
+        <script>
+            // Phone number formatting
+            document.getElementById('phone').addEventListener('input', function(e) {
+                let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+                e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+            });
+        </script>
+ 

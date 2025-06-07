@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1 layout:fragment="header">Dashboard</h1>
+
+    <div layout:fragment="content">
+        <!-- Info boxes -->
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Members</span>
+                        <span class="info-box-number" th:text="${totalMembers}">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-success"><i class="fas fa-money-bill"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Funds</span>
+                        <span class="info-box-number">
+                            $<span th:text="${#numbers.formatDecimal(totalFunds, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Pending Payments</span>
+                        <span class="info-box-number" th:text="${pendingPayments}">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-danger"><i class="fas fa-user-times"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Inactive Members</span>
+                        <span class="info-box-number" th:text="${inactiveMembers}">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Transactions -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Transactions</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table m-0">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Amount</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${recentTransactions}">
+                                        <td th:text="${transaction.member.name}">John Doe</td>
+                                        <td>
+                                            $<span th:text="${#numbers.formatDecimal(transaction.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                        </td>
+                                        <td>
+                                            <span th:class="${transaction.type == T(com.familyfund.model.Transaction.TransactionType).CREDIT ? 'badge badge-success' : 'badge badge-danger'}"
+                                                  th:text="${transaction.type}">CREDIT</span>
+                                        </td>
+                                        <td th:text="${#temporals.format(transaction.date, 'dd-MM-yyyy HH:mm')}">01-01-2024</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(recentTransactions)}">
+                                        <td colspan="4" class="text-center">No recent transactions</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Payments -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Pending Payments</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table m-0">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Month</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="subscription : ${pendingSubscriptions}">
+                                        <td th:text="${subscription.member.name}">John Doe</td>
+                                        <td th:text="${#temporals.format(subscription.month, 'MMMM yyyy')}">January 2024</td>
+                                        <td>
+                                            <span class="badge badge-warning">Pending</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(pendingSubscriptions)}">
+                                        <td colspan="3" class="text-center">No pending payments</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

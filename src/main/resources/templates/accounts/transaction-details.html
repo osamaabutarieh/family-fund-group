@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Transaction Details</title>
+</head>
+<body>
+    <h1 layout:fragment="header">Transaction Details</h1>
+
+    <div layout:fragment="content">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Transaction Information</h3>
+                        <div class="card-tools">
+                            <a href="/accounts" class="btn btn-tool">
+                                <i class="fas fa-arrow-left"></i> Back to Accounts
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Transaction ID</dt>
+                            <dd class="col-sm-8" th:text="${transaction.id}">1</dd>
+
+                            <dt class="col-sm-4">Date & Time</dt>
+                            <dd class="col-sm-8" th:text="${#temporals.format(transaction.date, 'dd-MM-yyyy HH:mm')}">
+                                01-01-2024 12:00
+                            </dd>
+
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8">
+                                <span th:class="${transaction.type == T(com.familyfund.model.Transaction.TransactionType).CREDIT ? 'badge badge-success' : 'badge badge-danger'}"
+                                      th:text="${transaction.type}">CREDIT</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Amount</dt>
+                            <dd class="col-sm-8">
+                                $<span th:text="${#numbers.formatDecimal(transaction.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Note</dt>
+                            <dd class="col-sm-8" th:text="${transaction.note}">Transaction note</dd>
+
+                            <dt class="col-sm-4">Member</dt>
+                            <dd class="col-sm-8" th:if="${transaction.member != null}">
+                                <strong th:text="${transaction.member.name}">John Doe</strong><br>
+                                <small class="text-muted">
+                                    Phone: <span th:text="${transaction.member.phone}">123-456-7890</span><br>
+                                    Email: <span th:text="${transaction.member.email}">john@example.com</span>
+                                </small>
+                            </dd>
+                            <dd class="col-sm-8" th:if="${transaction.member == null}">
+                                <em>No member associated</em>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Transactions -->
+            <div class="col-md-6" th:if="${transaction.member != null}">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Member's Recent Transactions</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="relatedTx : ${relatedTransactions}">
+                                        <td th:text="${#temporals.format(relatedTx.date, 'dd-MM-yyyy')}">01-01-2024</td>
+                                        <td>
+                                            <span th:class="${relatedTx.type == T(com.familyfund.model.Transaction.TransactionType).CREDIT ? 'badge badge-success' : 'badge badge-danger'}"
+                                                  th:text="${relatedTx.type}">CREDIT</span>
+                                        </td>
+                                        <td>
+                                            $<span th:text="${#numbers.formatDecimal(relatedTx.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                        </td>
+                                        <td th:text="${relatedTx.note}">Transaction note</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(relatedTransactions)}">
+                                        <td colspan="4" class="text-center">No related transactions found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

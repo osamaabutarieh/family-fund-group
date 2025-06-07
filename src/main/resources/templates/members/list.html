@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Members</title>
+</head>
+<body>
+    <h1 layout:fragment="header">Members</h1>
+
+    <div layout:fragment="content">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <a href="/members/add" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Member
+                </a>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- Members Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Member List</h3>
+                <div class="card-tools">
+                    <div class="input-group input-group-sm" style="width: 150px;">
+                        <input type="text" id="memberSearch" class="form-control float-right" placeholder="Search">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Join Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="member : ${members}">
+                            <td th:text="${member.id}">1</td>
+                            <td th:text="${member.name}">John Doe</td>
+                            <td th:text="${member.phone}">+1234567890</td>
+                            <td th:text="${member.email}">john@example.com</td>
+                            <td th:text="${#temporals.format(member.joinDate, 'dd-MM-yyyy')}">01-01-2024</td>
+                            <td>
+                                <span th:class="${member.status == T(com.familyfund.model.Member.MemberStatus).ACTIVE ? 'badge badge-success' : 'badge badge-danger'}"
+                                      th:text="${member.status}">ACTIVE</span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a th:href="@{/members/{id}/edit(id=${member.id})}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            th:data-member-id="${member.id}"
+                                            onclick="confirmDelete(this.getAttribute('data-member-id'))">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(members)}">
+                            <td colspan="7" class="text-center">No members found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional scripts -->
+    <th:block layout:fragment="scripts">
+        <script>
+            // Search functionality
+            document.getElementById('memberSearch').addEventListener('keyup', function() {
+                let searchText = this.value.toLowerCase();
+                let tableRows = document.querySelectorAll('tbody tr');
+                
+                tableRows.forEach(row => {
+                    let text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchText) ? '' : 'none';
+                });
+            });
+
+            // Delete confirmation
+            function confirmDelete(memberId) {
+                if (confirm('Are you sure you want to delete this member?')) {
+                    fetch(`/members/${memberId}`, { 
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Error deleting member');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error deleting member');
+                    });
+                }
+            }
+        </script>
+    </th:block>
+</body>
+</html> 

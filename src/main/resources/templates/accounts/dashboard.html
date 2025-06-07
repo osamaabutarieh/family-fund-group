@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Financial Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1 layout:fragment="header">Financial Dashboard</h1>
+
+    <div layout:fragment="content">
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(totalBalance, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>Total Balance</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3><span th:text="${activeMembers}">0</span></h3>
+                        <p>Active Members</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>$<span th:text="${#numbers.formatDecimal(monthlyAverage, 1, 'COMMA', 2, 'POINT')}">0.00</span></h3>
+                        <p>Monthly Average Income</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3><span th:text="${unpaidCount}">0</span></h3>
+                        <p>Unpaid Subscriptions</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <!-- Monthly Income/Expense Chart -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Monthly Income vs Expenses</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyChart" style="min-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Type Distribution -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Transaction Distribution</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="transactionPieChart" style="min-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity and Top Contributors -->
+        <div class="row">
+            <!-- Recent Activity -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activity</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Member</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${recentTransactions}">
+                                        <td th:text="${#temporals.format(transaction.date, 'dd-MM-yyyy')}">01-01-2024</td>
+                                        <td th:text="${transaction.member != null ? transaction.member.name : 'N/A'}">John Doe</td>
+                                        <td>
+                                            <span th:class="${transaction.type == T(com.familyfund.model.Transaction.TransactionType).CREDIT ? 'badge badge-success' : 'badge badge-danger'}"
+                                                  th:text="${transaction.type}">CREDIT</span>
+                                        </td>
+                                        <td>$<span th:text="${#numbers.formatDecimal(transaction.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Contributors -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Top Contributors</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Total Contribution</th>
+                                        <th>Last Payment</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="contributor : ${topContributors}">
+                                        <td>
+                                            <span th:text="${contributor.name}">John Doe</span><br>
+                                            <small class="text-muted" th:text="${contributor.phone}">123-456-7890</small>
+                                        </td>
+                                        <td>$<span th:text="${#numbers.formatDecimal(contributor.totalContribution, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                        <td th:text="${#temporals.format(contributor.lastPaymentDate, 'dd-MM-yyyy')}">01-01-2024</td>
+                                        <td>
+                                            <span th:class="${contributor.status == 'ACTIVE' ? 'badge badge-success' : 'badge badge-danger'}"
+                                                  th:text="${contributor.status}">ACTIVE</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional scripts -->
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // Monthly Income vs Expenses Chart
+            const monthlyData = /*[[${monthlyData}]]*/ {};
+            const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: [{
+                        label: 'Income',
+                        data: monthlyData.income,
+                        backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                        borderColor: 'rgb(40, 167, 69)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Expenses',
+                        data: monthlyData.expenses,
+                        backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                        borderColor: 'rgb(220, 53, 69)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Transaction Distribution Pie Chart
+            const transactionData = /*[[${transactionDistribution}]]*/ {};
+            const transactionPieChart = new Chart(document.getElementById('transactionPieChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Subscriptions', 'Donations', 'Expenses', 'Other'],
+                    datasets: [{
+                        data: transactionData,
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.5)',
+                            'rgba(23, 162, 184, 0.5)',
+                            'rgba(220, 53, 69, 0.5)',
+                            'rgba(108, 117, 125, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgb(40, 167, 69)',
+                            'rgb(23, 162, 184)',
+                            'rgb(220, 53, 69)',
+                            'rgb(108, 117, 125)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        </script>
+    </th:block>
+</body>
+</html> 
